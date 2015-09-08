@@ -73,6 +73,7 @@ func main() {
 	conf.ACCESS_KEY = cfg.Qiniu.AccessKey
 	conf.SECRET_KEY = cfg.Qiniu.SecretKey
 	conf.UP_HOST = cfg.Qiniu.UpHost
+	log.Printf("Use up-host: %v", conf.UP_HOST)
 
 	syncDir(cfg.Qiniu.Bucket, cfg.Qiniu.KeyPrefix, cfg.Local.SyncDir)
 	/*
