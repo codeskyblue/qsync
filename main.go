@@ -83,5 +83,9 @@ func main() {
 	conf.UP_HOST = cfg.Qiniu.UpHost
 	log.Printf("Use upload host: %v", conf.UP_HOST)
 
-	syncDir(cfg.Qiniu.Bucket, cfg.Qiniu.KeyPrefix, cfg.Local.SyncDir)
+	errcnt := syncDir(cfg.Qiniu.Bucket, cfg.Qiniu.KeyPrefix, cfg.Local.SyncDir)
+	if errcnt != 0 {
+		log.Println("Failed count =", errcnt)
+		os.Exit(1)
+	}
 }
