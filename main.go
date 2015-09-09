@@ -61,6 +61,7 @@ func syncDir(bucket, keyPrefix, dir string) int {
 				errCount += 1
 				log.Printf("Failed %v, %v", strconv.Quote(path), err)
 			}
+			log.Printf("Done %v", strconv.Quote(key))
 			wg.Done()
 		}()
 		return nil
