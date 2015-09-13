@@ -50,7 +50,6 @@ func genUptoken(bucket, key string) string {
 		query.Set("bucket", bucket)
 		query.Set("key", key)
 		u.RawQuery = query.Encode()
-		log.Println(u.String())
 		resp, err := http.Get(u.String())
 		if err != nil {
 			log.Fatal(err)
