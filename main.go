@@ -2,7 +2,10 @@ package main
 
 import (
 	"flag"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -26,18 +29,44 @@ type Config struct {
 	Local struct {
 		SyncDir string `gcfg:"syncdir"`
 	}
+	Gorelease struct {
+		Host  string `gcfg:"host"`
+		Token string `gcfg:"token"`
+	}
 }
 
-func genUptoken(bucketName string) string {
-	putPolicy := rs.PutPolicy{
-		Scope: bucketName,
+var cfg Config
+
+func genUptoken(bucket, key string) string {
+	gr := cfg.Gorelease
+	if gr.Token != "" {
+		u := url.URL{
+			Scheme: "http",
+			Host:   gr.Host,
+			Path:   "/uptoken",
+		}
+		query := u.Query()
+		query.Set("private_token", gr.Token)
+		query.Set("bucket", bucket)
+		query.Set("key", key)
+		u.RawQuery = query.Encode()
+		log.Println(u.String())
+		resp, err := http.Get(u.String())
+		if err != nil {
+			log.Fatal(err)
+		}
+		defer resp.Body.Close()
+		uptoken, _ := ioutil.ReadAll(resp.Body)
+		return string(uptoken)
 	}
-	//putPolicy.SaveKey = key
+	putPolicy := rs.PutPolicy{
+		Scope: bucket + ":" + key,
+	}
 	return putPolicy.Token(nil)
 }
 
 func uploadFile(bucket, key, filename string) error {
-	uptoken := genUptoken(bucket + ":" + key) // in order to rewrite exists file
+	uptoken := genUptoken(bucket, key) // in order to rewrite exists file
 
 	var ret io.PutRet
 	var extra = &io.PutExtra{}
@@ -60,8 +89,9 @@ func syncDir(bucket, keyPrefix, dir string) int {
 			if err := uploadFile(bucket, key, path); err != nil {
 				errCount += 1
 				log.Printf("Failed %v, %v", strconv.Quote(path), err)
+			} else {
+				log.Printf("Done %v", strconv.Quote(key))
 			}
-			log.Printf("Done %v", strconv.Quote(key))
 			wg.Done()
 		}()
 		return nil
@@ -74,7 +104,6 @@ func main() {
 	cfgFile := flag.String("c", "conf.ini", "config file")
 	flag.Parse()
 
-	var cfg Config
 	if err := gcfg.ReadFileInto(&cfg, *cfgFile); err != nil {
 		log.Fatal(err)
 	}
