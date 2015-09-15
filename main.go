@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	sysio "io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -40,6 +41,7 @@ var cfg Config
 func genUptoken(bucket, key string) string {
 	gr := cfg.Gorelease
 	if gr.Token != "" {
+		log.Println("Use gorelease, key:", key)
 		u := url.URL{
 			Scheme: "http",
 			Host:   gr.Host,
@@ -55,6 +57,10 @@ func genUptoken(bucket, key string) string {
 			log.Fatal(err)
 		}
 		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusOK {
+			sysio.Copy(os.Stdout, resp.Body)
+			log.Fatalf("status: %d", resp.StatusCode)
+		}
 		uptoken, _ := ioutil.ReadAll(resp.Body)
 		return string(uptoken)
 	}
