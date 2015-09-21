@@ -14,7 +14,7 @@ import (
 	"sync"
 
 	"github.com/qiniu/api.v6/conf"
-	"github.com/qiniu/api.v6/io"
+	"github.com/qiniu/api.v6/resumable/io"
 	"github.com/qiniu/api.v6/rs"
 	"gopkg.in/gcfg.v1"
 )
@@ -74,7 +74,10 @@ func uploadFile(bucket, key, filename string) error {
 	uptoken := genUptoken(bucket, key) // in order to rewrite exists file
 
 	var ret io.PutRet
-	var extra = &io.PutExtra{}
+	var extra = &io.PutExtra{
+		ChunkSize: 256 << 10,
+		TryTimes:  5,
+	}
 	return io.PutFile(nil, &ret, uptoken, key, filename, extra)
 }
 
